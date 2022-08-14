@@ -1,0 +1,9 @@
+game_dynamic_url = http://localhost/jbar/src/r1_b5/
+game_sso_enabled = 1
+game_tickets_enabled = 1
+game_charset_collection = abcçdefghijkjlmnopqrstuvwxyzABCÇDEFGHIJKLMNOPQRSTUVWXYZ123456789%&*',()?!
+game_cast_module_1 = bar_entry
+game_cast_module_2 = game_shared
+game_dynamic_rooms = cst_dynamic_load/bar_rooms
+game_dynamic_furni = cst_dynamic_load/furnitures
+game_dev_enabled = 1
