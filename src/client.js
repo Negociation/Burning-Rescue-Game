@@ -4,35 +4,317 @@ Author: Thiago Araújo
 
 */
 
-class MatchScene extends Phaser.Scene{
-    constructor(){
-        super("matchScene");
-    }
-
-    create(){
-        alert("Nova Partida Rolando");
-    }
-
-    update(){
+//Classe de Jogo
+class BurningGame extends Phaser.Game{
+    
+    constructor(gameConfig){
+        super(gameConfig);
+        this.initializeGame();
+        
 
     }
+
+    initializeGame(){
+        this.quizDirectory = null;
+        this.quizDirectoryStatus = 0;
+        this.gameCurrentScene = "loading";
+        this.externalDirectoryUrl = null;
+
+        this.loadDirectoryData();
+    }
+
+    loadDirectoryData(){
+
+        if(this.externalDirectoryUrl != null){
+            //Carregamento Externo
+        }else{
+            let defaultDirectoryData = 
+            '{ "questions" : [' +
+                '{"questao":"Pergunta A","opts":["Talvez A","Talvez B","Talvez C","Talvez D"],"resposta":1},'+
+                '{"questao":"Pergunta B","opts":["Talvez A","Talvez B","Talvez C","Talvez D"],"resposta":1},'+
+                '{"questao":"Pergunta C","opts":["Talvez A","Talvez B","Talvez C","Talvez D"],"resposta":1},'+
+                '{"questao":"Pergunta D","opts":["Talvez A","Talvez B","Talvez C","Talvez D"],"resposta":1}]}';
+            
+            
+            this.quizDirectory = JSON.parse(defaultDirectoryData);
+            console.log(this.quizDirectory);
+            this.quizDirectoryStatus = 1;
+
+
+        }
+    }
+    
 }
 
 
+//Tela de Partida
+class Partida extends Phaser.Scene{
+
+    constructor(){
+        super("partida");
+
+        //Construtor (Propriedades)
+        this.gameStatus = -1;
+        this.gameCounter = -1;
+        this.gameRound = 0;
+        this.lifeSpan = 4;
+        this.rightAnswers = 0;
+        this.score = 0;
+        this.questionHistory = [];
+    }
+
+    create(){
+        //Inicializar Placeholders de Texto
+        this.text = this.add.text(32, 32);
+        this.text2 = this.add.text(32, 60);
+        this.tituloPergunta = this.add.text(32,200);
+        this.respostasPerguntas = [];
+        this.respostasPerguntas = [this.add.text(32,230).setInteractive(),this.add.text(32,250).setInteractive(),this.add.text(260,230).setInteractive(),this.add.text(260,250).setInteractive()];
+
+        /* Eventos de Intercepção de Mouse para as Respostas */
+        this.respostasPerguntas[0].on('pointerdown', function (pointer) {
+            this.responderPergunta(1);
+            console.log("Clicado 1");
+        }.bind(this));
+
+        this.respostasPerguntas[1].on('pointerdown', function (pointer) {
+            console.log("Clicado 2");
+            this.responderPergunta(2);
+        }.bind(this));
+
+        this.respostasPerguntas[2].on('pointerdown', function (pointer) {
+            console.log("Clicado 3");
+            this.responderPergunta(3);
+        }.bind(this));
+
+        this.respostasPerguntas[3].on('pointerdown', function (pointer) {
+            console.log("Clicado 4");
+            this.responderPergunta(4);
+        }.bind(this));
+
+        //Eventos de Interceptação de Teclado para Respostas
+        this.input.keyboard.on('keydown', function (event) {
+                switch(event.key){
+                    case "a":
+                        case "A":
+                            this.responderPergunta(1);
+                            console.log("pickei a");
+                            break;
+                    case "b":
+                        case "B":
+                            this.responderPergunta(2);
+                            console.log("pickei b");
+                            break;
+                    case "c":
+                        case "C":
+                            this.responderPergunta(3);
+                            console.log("pickei c");
+                            break;
+                    case "d":
+                        case "D":
+                            this.responderPergunta(4);
+                            console.log("pickei d");
+                            break;
+                }
+            
+        }.bind(this));
+    }
+
+    update(){
+        //Atualizar a Label com as Vidas Restantes
+        this.text2.setText('Vidas Restantes: ' + this.lifeSpan);
+
+        //Escolher estado do jogo para as devidas atualizações
+        switch(this.gameStatus){
+            //Nova Partida (Primeira Vez)
+            case -1:
+                alert("Oops, um incêndio começou e os bombas d'agua estão travadas, podendo serem apenas destravadas com a resposta correta, responda as perguntas e ajude-nos a salvar os residentes deste predio em chamas");
+                this.gameStatus = 0;
+                break;
+            //Novo Round de Perguntas
+            case 0:
+                if(this.rightAnswers < 4){
+                    this.novaPergunta();
+                }else{
+                    alert("Parabens, você conseguiu apagar o incêndio, seu score foi:"+ this.score );
+                    this.scene.remove("partida");
+                    this.scene.start('menuPrincipal');
+                }
+                break;
+            //Round Rodando
+            case 1:
+                console.log("Aguardando o tempo de resposta");
+                if(this.gameCounter==-1){
+                    this.lifeSpan -=1;
+                    this.timedEvent.paused = true;
+                    alert("Tempo Acabou, o fogo esta se alastrando, não desista");
+                    this.text.setText("");
+                    this.gameStatus= 0;
+                }
+                if(this.lifeSpan == 0){
+                    alert("Meu deus parece que não conseguimos salvar os cidadãos, é uma pena,contudo você pode tentar novamente. Seu score foi: "+ (this.score > 0 ? this.score : 0));
+                    this.scene.remove("partida");
+                    this.scene.start('menuPrincipal');
+                    
+                }
+                break;
+        }
+
+
+
+
+    }
+
+    onEvent(){
+        console.log("Executei Evento");
+        //Subtrair 1s do contador
+        this.gameCounter -= 1;
+
+        //Atualizar o Texto da Tela
+        this.text.setText('Tempo para Responder: ' + this.gameCounter);
+    }
+
+    novaPergunta(){
+        //Se ja existe um timer definido remover para proxima pergunta
+        if(this.timedEvent == undefined){
+            this.timedEvent = this.time.addEvent({ delay: 1000, callback: this.onEvent, callbackScope: this, loop: true });
+        }
+
+        
+
+        
+        //Preparar para a rodada de perguntas
+        this.gameCounter = 20;
+        //this.timedEvent = this.time.delayedCall(1000, this.onEvent, [], this,true);
+
+        //Setar o Round
+        this.gameRound += 1;
+
+        //Adicionar o Evento de Cronometro
+        
+        //Começar a rodar a partida novamente
+        this.gameStatus = 1;
+
+        //Locales de Pergunta e Resposta
+        this.text.setText('Tempo para Responder: ' + this.gameCounter);
+
+        //Escolher pergunta do diretorio:
+        let randomQuestion =Math.floor(Math.random() * (0 - (this.game.quizDirectory.questions.length)) + (this.game.quizDirectory.questions.length));
+        if(this.questionHistory.length < this.game.quizDirectory.questions.length){
+            while(this.questionHistory.includes(randomQuestion)){
+                randomQuestion =Math.floor(Math.random() * (0 - (this.game.quizDirectory.questions.length)) + (this.game.quizDirectory.questions.length));
+            }
+        }else if(this.questionHistory.length == this.game.quizDirectory.questions.length){
+            //A partir deste ponto pode-se repetir perguntas
+            alert("Gee, Dejavi! Falha na matrix, Você esgotou nosso estoque de perguntas.");
+            randomQuestion =Math.floor(Math.random() * (0 - (this.game.quizDirectory.questions.length)) + (this.game.quizDirectory.questions.length));
+        }else{
+            randomQuestion =Math.floor(Math.random() * (0 - (this.game.quizDirectory.questions.length)) + (this.game.quizDirectory.questions.length));
+        }
+
+        this.questionHistory.push(randomQuestion);
+
+        //Setar o texto com base na pergunta escolhida
+        this.tituloPergunta.setText("Pergunta "+ this.gameRound +": " + this.game.quizDirectory.questions[randomQuestion].questao);
+        this.respostasPerguntas[0].setText("A) " +this.game.quizDirectory.questions[randomQuestion].opts[0]);
+        this.respostasPerguntas[1].setText("B) " +this.game.quizDirectory.questions[randomQuestion].opts[1]);
+        this.respostasPerguntas[2].setText("C) " +this.game.quizDirectory.questions[randomQuestion].opts[2]);
+        this.respostasPerguntas[3].setText("D) " +this.game.quizDirectory.questions[randomQuestion].opts[3]);
+
+        this.timedEvent.paused = false;
+    }
+
+    responderPergunta(resposta){
+        //Se o jogo esta rolando então pode validar as respostas
+        if(this.gameStatus==1){
+            console.log(this.game.quizDirectory.questions[this.questionHistory[this.questionHistory.length-1]].resposta);
+            if(this.game.quizDirectory.questions[this.questionHistory[this.questionHistory.length-1]].resposta == resposta){
+                this.rightAnswers += 1;
+                this.gameStatus = 0;
+                this.score += this.gameCounter + 10;
+            }else{
+                //Pessoa Errou então 
+                this.score -= 10;
+                this.lifeSpan -=1;
+                this.gameStatus = (this.lifeSpan > 0 ? 0 : 1);
+            }
+        }
+    }
+
+
+}
+
+//Tela de Menu Principal
 class MenuPrincipal extends Phaser.Scene{
     constructor(){
         super("menuPrincipal");
     }
 
     create(){
-        alert("Menu Principal Aqui Estou");
+
+        //Declaração de Objetos do Menu
+        this.menuContainer = this.add.container(this.scale.width / 2, this.scale.height / 2);
+        this.startButton = this.add.sprite(0,0, 'startbutton').setInteractive();
+        this.gameLogo = this.add.sprite(0,-120, 'game_logo').setInteractive();
+        this.startButton.setVisible(false);
+        this.startButton.alpha =0;
+        this.startButton.setScale(0.5,0.5);
+        //Adicionar Logo e Botao no container para mover tudo junto 
+        this.menuContainer.add(this.startButton);
+        this.menuContainer.add(this.gameLogo);
+
+
+        /* Eventos de Mouse para Botão de Play */
+        this.startButton.on('pointerdown', function (pointer) {
+            this.scene.add('partida', new Partida());
+            this.scene.start('partida');
+        }.bind(this));
+
+        this.startButton.on('pointerover', function (pointer) {
+            this.setTint(0xE6810E);
+        });
+
+        this.startButton.on('pointerout', function (pointer) {
+            this.clearTint();    
+        });
+
+        this.startButton.on('pointerup', function (pointer) {
+            this.clearTint();    
+        });
+
+
+        this.tweens.add({
+            targets: this.gameLogo,
+            props: {
+                y: { value: '-=30', duration: 1000, ease: 'Bounce.easeIn', yoyo: true,delay:2000,repeatDelay:1000,  repeat:-1 }
+            },
+            onRepeat: function () {
+                this.startButton.setVisible(true);          
+                this.tweens.add({
+                    targets: this.startButton,
+                    alpha: {
+                        value: 1, duration: 2000, ease: 'Power1' }        
+                });
+            }.bind(this)
+        });
+
+        
+        this.scale.on('resize',  this.resize,this);
+
     }
 
     update(){
 
     }
+
+
+    resize(gameSize, baseSize, displaySize, resolution){
+        this.menuContainer.setPosition(gameSize.width / 2, gameSize.height / 2);
+        
+    }
 }
 
+//Tela de Carregamento
 class Client extends Phaser.Scene{
 
     constructor(){
@@ -57,6 +339,9 @@ class Client extends Phaser.Scene{
         //Dynamic Load Begins of Images from Menu and Match
         this.load.image("teste","assets/logo.png");
         this.load.image("teste2","assets/logo.png");
+        this.load.image("startbutton","assets/startbutton.png");
+        this.load.image("game_logo","assets/game_logo.png");
+
 
     }
     
@@ -94,7 +379,7 @@ class Client extends Phaser.Scene{
     }
 
     resize(gameSize, baseSize, displaySize, resolution){
-        this.loadContainer.setPosition(gameSize.width / 2, gameSize.height / 2);
+        this.loadContainer.setPosition(gameSize.width, gameSize.height);
     }
 
     create(){
@@ -102,5 +387,4 @@ class Client extends Phaser.Scene{
         this.scene.start('menuPrincipal');
     }
     
-
 }
