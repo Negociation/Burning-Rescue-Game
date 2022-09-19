@@ -64,12 +64,31 @@ class Partida extends Phaser.Scene{
     }
 
     create(){
+
+        this.scale.on('resize',  this.resize,this);
+        this.questionBox = this.add.image(0,0, 'questionbox');
+        this.questionBox.setScale(2);
+        console.log("h"+this.scale.height);
+        this.container = this.add.container(this.scale.width / 2, this.scale.height-(this.questionBox.displayHeight/2)-50);
+        this.container.add(this.questionBox);
+
+ 
+
+        let questionBoxContent = this.add.container((-this.questionBox.displayWidth/2)+10,(-this.questionBox.displayHeight/2)+15);
+        
+        this.container.add(questionBoxContent);
         //Inicializar Placeholders de Texto
         this.text = this.add.text(32, 32);
         this.text2 = this.add.text(32, 60);
-        this.tituloPergunta = this.add.text(32,200);
+        this.tituloPergunta = this.add.text(32,90);
         this.respostasPerguntas = [];
-        this.respostasPerguntas = [this.add.text(32,230).setInteractive(),this.add.text(32,250).setInteractive(),this.add.text(260,230).setInteractive(),this.add.text(260,250).setInteractive()];
+        this.respostasPerguntas = [this.add.text(32,130).setInteractive(),this.add.text(32,150).setInteractive(),this.add.text(260,130).setInteractive(),this.add.text(260,150).setInteractive()];
+        
+        questionBoxContent.add(this.text);
+        questionBoxContent.add(this.text2);
+        questionBoxContent.add(this.tituloPergunta);
+        questionBoxContent.add(this.respostasPerguntas);
+
 
         /* Eventos de Intercepção de Mouse para as Respostas */
         this.respostasPerguntas[0].on('pointerdown', function (pointer) {
@@ -241,6 +260,9 @@ class Partida extends Phaser.Scene{
         }
     }
 
+    resize(gameSize, baseSize, displaySize, resolution){
+        this.container.setPosition(this.scale.width / 2, this.scale.height-(this.questionBox.displayHeight/2)-50);
+    }
 
 }
 
@@ -341,6 +363,8 @@ class Client extends Phaser.Scene{
         this.load.image("teste2","assets/logo.png");
         this.load.image("startbutton","assets/startbutton.png");
         this.load.image("game_logo","assets/game_logo.png");
+        this.load.image("questionbox","assets/questionbox.png");
+
 
 
     }
